@@ -1,22 +1,33 @@
 import Phaser from "phaser";
+import { GameScene } from "./GameScene";
+
+// Get the current window width and height
+const windowWidth = window.innerWidth;
+const windowHeight = window.innerHeight;
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
-  backgroundColor: "#2d2d2d",
-  scene: {
-    preload: preload,
-    create: create,
+  width: windowWidth,
+  height: windowHeight,
+  backgroundColor: "#ababab",
+  physics: {
+    default: "arcade",
+    arcade: {
+      gravity: { y: 0 },
+      debug: false,
+    },
   },
+  scene: [GameScene],
 };
 
 const game = new Phaser.Game(config);
 
-function preload(this: Phaser.Scene) {
-  this.load.image("logo", "assets/phaser-logo.png");
+// Function to handle window resizing
+function onWindowResize() {
+  const newWidth = window.innerWidth;
+  const newHeight = window.innerHeight;
+  game.scale.resize(newWidth, newHeight);
 }
 
-function create(this: Phaser.Scene) {
-  const logo = this.add.image(400, 300, "logo");
-}
+// Add a resize event listener to the window
+window.addEventListener("resize", onWindowResize);
