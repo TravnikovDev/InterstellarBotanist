@@ -1,10 +1,12 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  entry: './src/main.ts',
+  entry: path.resolve(__dirname, 'src', 'main.ts'),
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js'
+    filename: 'bundle.js',
+    publicPath: '/'
   },
   resolve: {
     extensions: ['.ts', '.js'],
@@ -21,9 +23,21 @@ module.exports = {
       }
     ]
   },
+  plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'public', to: '.' }
+      ]
+    })
+  ],
   devServer: {
-    contentBase: path.resolve(__dirname, 'dist'),
-    publicPath: '/assets/',
-    writeToDisk: true
+    static: {
+      directory: path.join(__dirname, 'dist')
+    },
+    devMiddleware: {
+      writeToDisk: true
+    },
+    compress: true,
+    port: 8080
   }
 };
