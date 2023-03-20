@@ -9,6 +9,49 @@ export class GameScene extends Phaser.Scene {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private tilemap: Phaser.Tilemaps.Tilemap;
 
+  private levelWidth = 50;
+  private levelHeight = 50;
+  private tileWidth = 256; // Replace with the width of your tiles
+  private tileHeight = 256; // Replace with the height of your tiles
+
+  private levelData = new Array(this.levelHeight)
+    .fill(null)
+    .map(() => new Array(this.levelWidth).fill(0));
+
+  private tileProbabilities = {
+    0: 0.4, // Grass
+    1: 0.15, // Dirt
+    2: 0.1, // Water
+    3: 0.1, // Rock
+    4: 0.1, // Sand
+    5: 0.03, // Tree
+    6: 0.02, // Bush
+    7: 0.05, // Path
+    8: 0.05, // Flower
+  };
+
+  private generateTerrain(
+    levelData: number[][],
+    tileProbabilities: { [index: number | string]: number }
+  ): void {
+    const tileTypes = Object.keys(tileProbabilities);
+
+    for (let y = 0; y < levelData.length; y++) {
+      for (let x = 0; x < levelData[y].length; x++) {
+        const randomValue = Math.random();
+        let cumulativeProbability = 0;
+
+        for (const tileType of tileTypes) {
+          cumulativeProbability += tileProbabilities[tileType];
+          if (randomValue < cumulativeProbability) {
+            levelData[y][x] = parseInt(tileType);
+            break;
+          }
+        }
+      }
+    }
+  }
+
   preload() {
     this.load.spritesheet("character", "assets/images/phaser_char.png", {
       frameWidth: 64, // Width of each frame in the sprite sheet
@@ -18,44 +61,46 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createTilemap(): void {
-    const tileWidth = 256; // Replace with the width of your tiles
-    const tileHeight = 256; // Replace with the height of your tiles
-
     // Create a blank tilemap with the given tile dimensions
     this.tilemap = this.make.tilemap({
-      tileWidth: tileWidth,
-      tileHeight: tileHeight,
-      width: 100, // Set the desired width of the tilemap (in tiles)
-      height: 100, // Set the desired height of the tilemap (in tiles)
+      width: this.levelWidth,
+      height: this.levelHeight,
+      tileWidth: this.tileWidth,
+      tileHeight: this.tileHeight,
     });
 
     // Add the tileset image to the tilemap
-    const tilesetImage = this.tilemap.addTilesetImage(
+    const tileset = this.tilemap.addTilesetImage(
       "tileset",
       undefined,
-      tileWidth,
-      tileHeight
+      this.tileWidth,
+      this.tileHeight
     );
 
     // Create a new tilemap layer using the tileset image
-    const layer = this.tilemap.createBlankLayer("background", tilesetImage);
+    const terrainLayer = this.tilemap.createBlankLayer("terrainLayer", tileset);
 
-    // Fill the tilemap layer with tiles using the tile indices from your tileset
-    layer.fill(0, 0, 0, 100, 100); // Fill with grass tiles (assuming grass is the first tile in your tileset)
+    // Adding tiles to the map
+    terrainLayer.putTilesAt(this.levelData, 0, 0);
 
-    const tileIndices = [0, 1, 3]; // Grass, dirt, and rock tile indices
-    layer.randomize(0, 0, 20, 20, tileIndices);
+    // Add collision
+    // this.tilemap.setCollision([2, 5]); // Assuming water tiles have an index of 2
+    // this.physics.add.collider(this.player, terrainLayer);
   }
 
   create() {
+    this.generateTerrain(this.levelData, this.tileProbabilities);
     this.createTilemap();
+
     this.physics.world.setBounds(
       0,
       0,
       this.tilemap.widthInPixels,
       this.tilemap.heightInPixels
     );
-    this.player = this.physics.add.sprite(100, 100, "character").setOrigin(0.5, 0.5);
+    this.player = this.physics.add
+      .sprite(100, 100, "character")
+      .setOrigin(0.5, 0.5);
     this.cursors = this.input.keyboard.createCursorKeys();
     this.player.setCollideWorldBounds(true);
 
